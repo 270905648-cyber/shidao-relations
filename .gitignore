@@ -47,5 +47,23 @@ test
 prompt
 
 server.log
+
 # Skills directory
 /skills/
+
+# Android签名密钥（重要：不要上传到GitHub！）
+*.jks
+*.keystore
+release-keystore.jks
+
+# Android构建输出
+android/app/build/
+android/.gradle/
+android/build/
+
+# APK文件
+*.apk
+
+# 敏感配置文件
+.env.static
+.env.production

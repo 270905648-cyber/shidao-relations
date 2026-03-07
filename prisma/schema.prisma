@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,20 +10,134 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// 人物档案表
+model Person {
+  id                    String   @id @default(cuid())
+  name                  String                       // 姓名/代号
+  category              String                       // 关系分类：领导/同事/竞争者/八卦圈/贫困生/普通学生/校外家长/亲戚/社会人士/能量黑洞
+  priority              String   @default("偶尔维护")  // 维护优先级：核心维护/定期维护/偶尔维护/边界维护
+
+  // 可选补充字段
+  subCategory           String?                      // 子分类
+  circles               String?                      // 关联圈子（JSON数组）
+  energyCost            Int?                         // 主动联系能量成本 1-5
+  passiveBurden         Int?                         // 被动联系负担 1-5
+  influencePower        Int?                         // 舆论影响力 1-5（仅八卦圈）
+  usableScope           String?                      // 可利用范围（JSON数组）
+  coreDriver            String?                      // 核心驱动力（JSON数组）
+  currentNeed           String?                      // 近期需求/软肋
+  riskLine              String?                      // 风险红线
+  birthday              DateTime?                    // 生日/重要纪念日
+  familyInfo            String?                      // 家庭情况/背景
+  contactFrequency      Int?                         // 建议联系频率（天）
+  intimacy              Int?                         // 关系亲密度 1-10
+  attitude              String?                      // 对方当前态度：友善/中立/冷淡/敌对
+
+  // 校外家长专用字段
+  childName             String?                      // 孩子姓名
+  childGrade            String?                      // 孩子年级
+  childStudyStatus      String?                      // 孩子学习情况
+  parentType            String?                      // 家长类型
+  payAbility            Int?                         // 付费能力 1-5
+  referralWillingness   Int?                         // 转介绍意愿 1-5
+  referralCount         Int       @default(0)        // 已转介绍人数
+  potentialReferrals    String?                      // 潜在转介绍对象
+
+  // 贫困生专用字段
+  familySituation       String?                      // 家庭情况
+  aidRecords            String?                      // 资助记录
+  academicTracking      String?                      // 学业跟踪
+  mentalState           String?                      // 心理状态
+  futurePotential       String?                      // 未来潜力评估
+  graduationDestination String?                      // 毕业去向
+  isActive              Boolean   @default(true)     // 是否活跃（毕业后转入种子库设为false）
+  wakeupCycle           String?                      // 唤醒周期（JSON格式：教师节/考研季等）
+
+  // 系统字段
+  lastContactDate       DateTime?                    // 最近一次联系
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // 关联关系
+  interactions          Interaction[]
+  relationsAsPerson1    Relation[] @relation("Person1Relations")
+  relationsAsPerson2    Relation[] @relation("Person2Relations")
+  confusions            Confusion[]
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// 互动记录表
+model Interaction {
+  id                    String   @id @default(cuid())
+  personId              String
+  person                Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  date                  DateTime  @default(now())     // 互动日期
+  type                  String                       // 互动类型
+  duration              Int?                         // 互动时长（分钟）
+  initiative            String                       // 主动/被动
+  nature                String                       // 互动性质：工作必需/履职延伸/非必需社交
+  countToBudget         Boolean   @default(true)     // 是否计入周预算
+  energyScore           Int?                         // 能量消耗评分 1-5
+  tags                  String?                      // 标签（JSON数组）
+  note                  String?                      // 备注（语音输入默认填充）
+
+  // 复盘字段（可选展开）
+  surfaceCost           String?                      // 明面付出
+  hiddenGain            String?                      // 隐形收益
+  emotionValue          Int?                         // 对方情绪价值反馈 1-5
+  spreadTracking        String?                      // 舆论传播跟踪
+  riskLevel             String?                      // 风险等级：低风险/中风险/高风险
+
+  createdAt             DateTime  @default(now())
+}
+
+// 人物关系表
+model Relation {
+  id                    String   @id @default(cuid())
+  person1Id             String
+  person2Id             String
+  person1               Person   @relation("Person1Relations", fields: [person1Id], references: [id], onDelete: Cascade)
+  person2               Person   @relation("Person2Relations", fields: [person2Id], references: [id], onDelete: Cascade)
+  type                  String                       // 关系类型：盟友/对立/上下级/同学/亲戚/同事
+  intimacy              Int?                         // 亲密度 1-10
+  note                  String?                      // 备注说明
+  createdAt             DateTime  @default(now())
+}
+
+// 困惑事件表
+model Confusion {
+  id                    String   @id @default(cuid())
+  title                 String                       // 事件标题
+  date                  DateTime  @default(now())    // 发生日期
+  personId              String?
+  person                Person?   @relation(fields: [personId], references: [id], onDelete: SetNull)
+  description           String?                      // 详细描述
+  goal                  String?                      // 希望达成的目标
+  action                String?                      // 用户采纳的行动
+  followUp              String?                      // 后续跟踪
+  status                String    @default("待处理")  // 状态：待处理/处理中/已解决/已放弃
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// 策略库表
+model Strategy {
+  id                    String   @id @default(cuid())
+  category              String                       // 分类：测试动作/转介绍话术/能量管理/舆论利用
+  title                 String                       // 标题
+  content               String                       // 内容
+  targetType            String?                      // 适用人物类型
+  riskLevel             String?                      // 风险等级
+  isCustom              Boolean   @default(false)    // 是否用户自定义
+  createdAt             DateTime  @default(now())
+}
+
+// 用户设置表
+model UserSettings {
+  id                    String   @id @default(cuid())
+  weeklyBudget          Int       @default(210)      // 周预算（分钟），默认3.5小时
+  dataRetentionDays     Int       @default(365)      // 数据保留天数
+  masterPasswordHash    String?                      // 主密码哈希（可选）
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
