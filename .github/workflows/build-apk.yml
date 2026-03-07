@@ -60,49 +60,15 @@ jobs:
         run: |
           npx cap sync android
 
-      - name: Create keystore directory
-        run: mkdir -p android/app
-
-      - name: Decode Keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release-keystore.jks
-
-      - name: Build Release APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        run: |
-          cd android
-          ./gradlew assembleRelease \
-            -Pandroid.signingConfigs.release.storeFile=app/release-keystore.jks \
-            -Pandroid.signingConfigs.release.storePassword="${{ secrets.KEYSTORE_PASSWORD }}" \
-            -Pandroid.signingConfigs.release.keyAlias="${{ secrets.KEY_ALIAS }}" \
-            -Pandroid.signingConfigs.release.keyPassword="${{ secrets.KEY_PASSWORD }}"
-        continue-on-error: true
-
-      - name: Build Debug APK (fallback)
-        if: ${{ secrets.KEYSTORE_BASE64 == '' || failure() }}
+      - name: Build Debug APK
         run: |
           cd android
           ./gradlew assembleDebug
 
-      - name: Find APK
-        id: find_apk
-        run: |
-          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "apk_path=android/app/build/outputs/apk/release/app-release.apk" >> $GITHUB_OUTPUT
-            echo "apk_type=release" >> $GITHUB_OUTPUT
-          else
-            echo "apk_path=android/app/build/outputs/apk/debug/app-debug.apk" >> $GITHUB_OUTPUT
-            echo "apk_type=debug" >> $GITHUB_OUTPUT
-          fi
-
       - name: Rename APK
         run: |
           VERSION=${{ github.event.inputs.version || github.ref_name }}
-          TYPE=${{ steps.find_apk.outputs.apk_type }}
-          mv ${{ steps.find_apk.outputs.apk_path }} shidao-relations-${VERSION}-${TYPE}.apk
+          mv android/app/build/outputs/apk/debug/app-debug.apk shidao-relations-${VERSION}.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -118,35 +84,20 @@ jobs:
           body: |
             ## 师道·人际关系智库 V${{ github.ref_name }}
             
-            ### 🎉 安装说明
+            ### 安装说明
             1. 下载APK文件
             2. 在Android设备上允许安装未知来源应用
             3. 安装APK文件
-            4. **首次使用请在设置中配置后端API地址**
+            4. 首次使用请在设置中配置后端API地址
             
-            ### ⚙️ 配置后端
-            APK安装后需要配置后端API地址才能使用：
-            
-            **方式一：使用公共后端（推荐）**
-            - 进入设置 → 后端API配置
-            - 输入公共API地址（如有提供）
-            
-            **方式二：自建后端**
-            1. Fork本项目到你的GitHub
-            2. 部署到Vercel：`vercel --prod`
-            3. 将部署后的URL配置到APK设置中
-            
-            ### ✨ 功能列表
-            - ✅ 能量驾驶舱
-            - ✅ 人物档案管理
-            - ✅ 互动记录
-            - ✅ 语音秒记
-            - ✅ 困惑事件
-            - ✅ 策略库
-            - ✅ 数据导出
-            
-            ### 📖 详细文档
-            详见项目 `docs/` 目录
+            ### 功能列表
+            - 能量驾驶舱
+            - 人物档案管理
+            - 互动记录
+            - 语音秒记
+            - 困惑事件
+            - 策略库
+            - 数据导出
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -155,11 +106,9 @@ jobs:
           echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **版本**: ${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **类型**: ${{ steps.find_apk.outputs.apk_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **类型**: debug" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📱 使用说明" >> $GITHUB_STEP_SUMMARY
-          echo "1. 安装APK后，进入**设置**页面" >> $GITHUB_STEP_SUMMARY
-          echo "2. 找到**后端API配置**部分" >> $GITHUB_STEP_SUMMARY
-          echo "3. 输入你的后端地址（如 https://your-app.vercel.app）" >> $GITHUB_STEP_SUMMARY
-          echo "4. 点击**测试连接**确认可用" >> $GITHUB_STEP_SUMMARY
-          echo "5. 点击**保存配置**" >> $GITHUB_STEP_SUMMARY
+          echo "### 使用说明" >> $GITHUB_STEP_SUMMARY
+          echo "1. 安装APK后，进入设置页面" >> $GITHUB_STEP_SUMMARY
+          echo "2. 配置后端API地址" >> $GITHUB_STEP_SUMMARY
+          echo "3. 测试连接并保存" >> $GITHUB_STEP_SUMMARY
