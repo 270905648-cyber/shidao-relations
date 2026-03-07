@@ -49,7 +49,7 @@ jobs:
 
       - name: Build Next.js static export
         run: |
-          bunx next build --no-lint
+          bunx next build
 
       - name: Restore API routes
         run: |
