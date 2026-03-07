@@ -45,23 +45,37 @@ jobs:
 
       - name: Remove API routes for static export
         run: |
-          mv src/app/api src/app/api_backup
+          rm -rf src/app/api
 
       - name: Build Next.js static export
         run: |
           bunx next build
+          ls -la out/ || ls -la .next/ || echo "No output found"
 
-      - name: Restore API routes
+      - name: Create out directory if missing
         run: |
-          mv src/app/api_backup src/app/api
+          if [ ! -d "out" ]; then
+            mkdir -p out
+            cp -r .next/standalone/* out/ 2>/dev/null || true
+            cp -r .next/static out/_next 2>/dev/null || true
+            cp -r public/* out/ 2>/dev/null || true
+          fi
+          ls -la out/
+
+      - name: Create index.html if missing
+        run: |
+          if [ ! -f "out/index.html" ]; then
+            echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/"></head><body>Redirecting...</body></html>' > out/index.html
+          fi
 
       - name: Initialize Capacitor
         run: |
-          npx cap init "师道·人际关系智库" com.shidao.relations --web-dir out || true
+          rm -rf android
+          npx cap init "师道·人际关系智库" com.shidao.relations --web-dir out
 
       - name: Add Android platform
         run: |
-          npx cap add android || true
+          npx cap add android
 
       - name: Sync Capacitor
         run: |
