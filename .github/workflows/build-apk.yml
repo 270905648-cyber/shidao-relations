@@ -19,7 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -43,13 +43,17 @@ jobs:
           bun install
           bun add -D @capacitor/core @capacitor/cli @capacitor/android
 
+      - name: Switch to static export config
+        run: |
+          cp next.config.static.ts next.config.ts
+
       - name: Remove API routes for static export
         run: |
           mv src/app/api src/app/api_backup
 
       - name: Build Next.js static export
         run: |
-          bunx next build
+          bun run build
 
       - name: Restore API routes
         run: |
@@ -96,5 +100,12 @@ jobs:
             2. 在Android设备上允许安装未知来源应用
             3. 安装APK文件
             4. 首次使用请在设置中配置后端API地址
+            
+            ### 后端部署
+            ```bash
+            npm i -g vercel
+            vercel --prod
+            ```
+            然后将URL配置到APK设置中。
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
