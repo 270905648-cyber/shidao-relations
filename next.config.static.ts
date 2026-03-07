@@ -1,12 +1,16 @@
 import type { NextConfig } from "next";
 
-// 服务器模式配置（用于Vercel/Railway部署）
+// 静态导出配置（用于APK构建）
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: "export",
+  images: {
+    unoptimized: true,
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  trailingSlash: true,
 };
 
 export default nextConfig;
