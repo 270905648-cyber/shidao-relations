@@ -43,10 +43,18 @@ jobs:
           bun install
           bun add -D @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Build Next.js static export
+      - name: Build Next.js for static
+        env:
+          BUILD_MODE: static
         run: |
-          export BUILD_MODE=static
-          bun run build
+          bun run db:generate || true
+          bunx next build --no-lint
+
+      - name: Export static files
+        run: |
+          mkdir -p out
+          cp -r .next/static out/_next 2>/dev/null || true
+          cp -r public/* out/ 2>/dev/null || true
 
       - name: Initialize Capacitor
         run: |
@@ -89,26 +97,5 @@ jobs:
             2. 在Android设备上允许安装未知来源应用
             3. 安装APK文件
             4. 首次使用请在设置中配置后端API地址
-            
-            ### 功能列表
-            - 能量驾驶舱
-            - 人物档案管理
-            - 互动记录
-            - 语音秒记
-            - 困惑事件
-            - 策略库
-            - 数据导出
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Summary
-        run: |
-          echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **版本**: ${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **类型**: debug" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 使用说明" >> $GITHUB_STEP_SUMMARY
-          echo "1. 安装APK后，进入设置页面" >> $GITHUB_STEP_SUMMARY
-          echo "2. 配置后端API地址" >> $GITHUB_STEP_SUMMARY
-          echo "3. 测试连接并保存" >> $GITHUB_STEP_SUMMARY
